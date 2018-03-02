@@ -60,14 +60,15 @@ class Graph:
         """
         return Query(self)
 
-    def addVertex(self, id, label, data={}):
+    def addVertex(self, id, label, data={}, gen=[]):
         """
         Add vertex to a graph.
         """
         payload = json.dumps({
             "gid" : id,
             "label" : label,
-            "data" : data
+            "data" : data,
+            "gen" : gen
         })
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
         request = urllib2.Request(self.url + "/" + self.name + "/vertex", payload, headers=headers)
