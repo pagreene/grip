@@ -1,4 +1,4 @@
-The Arachne Graph Database server
+# The Arachne Graph Database server
 
 To Install
 ----------
@@ -30,7 +30,7 @@ curl -O http://snap.stanford.edu/data/bigdata/amazon/amazon-meta.txt.gz
 
 Convert the data
 ```
-python $GOPATH/src/github.com/bmeg/arachne/test/amazon_convert.py amazon-meta.txt.gz test.data
+python $GOPATH/src/github.com/bmeg/arachne/example/amazon_convert.py amazon-meta.txt.gz test.data
 ```
 
 Create Amazon Graph
@@ -48,8 +48,13 @@ Load data
 arachne load --edge test.data.edge --vertex test.data.vertex --graph amazon
 ```
 
+Example queries:
+Command line
+```
+arachne query amazon 'O.query().V().groupCount("group")'
+```
 
-Some example queries
+Python
 ```
 import aql
 import json
@@ -59,23 +64,23 @@ conn = aql.Connection("http://localhost:8201")
 O = conn.graph("amazon")
 
 #Count the Vertices
-print list(O.query().V().count().execute())
+print list(O.query().V().count())
 #Count the Edges
-print list(O.query().E().count().execute())
+print list(O.query().E().count())
 
 #Try simple traveral
-#print O.query().V("B00000I06U").outEdge().execute()
+print list(O.query().V("B00000I06U").outEdge())
 
 
 #Do a group count of the different 'group's in the graph
-print O.query().V().groupCount("group").execute()
+print list(O.query().V().groupCount("group"))
 
 #use graph to find every Book that is similar to a DVD
-for a in O.query().V().has("group", "Book").mark("a").outgoing("similar").has("group", "DVD").mark("b").select(["a", "b"]).execute():
+for a in O.query().V().has("group", "Book").mark("a").outgoing("similar").has("group", "DVD").mark("b").select(["a", "b"]):
     print a
 ```
 
-Matrix Data loading Example
+Matrix Data Loading Example
 ---------------------------
 
 Create the graph
@@ -97,24 +102,22 @@ Load Pathway information
 ```
 curl -O http://www.pathwaycommons.org/archives/PC2/v9/PathwayCommons9.All.hgnc.sif.gz
 gunzip PathwayCommons9.All.hgnc.sif.gz
-python ./test/load_sif.py PathwayCommons9.All.hgnc.sif
+python $GOPATH/src/github.com/bmeg/arachne/example/load_sif.py PathwayCommons9.All.hgnc.sif
 ```
 
 Load Matrix data
 ```
 curl -O https://tcga.xenahubs.net/download/TCGA.BRCA.sampleMap/HiSeqV2.gz
 gunzip HiSeqV2.gz
-python ./test/load_matrix.py HiSeqV2
+python $GOPATH/src/github.com/bmeg/arachne/example/load_matrix.py HiSeqV2
 ```
 
 Load clinical information
 ```
 curl -O https://tcga.xenahubs.net/download/TCGA.BRCA.sampleMap/BRCA_clinicalMatrix.gz
 gunzip BRCA_clinicalMatrix.gz
-python ./test/load_property_matrix.py BRCA_clinicalMatrix
+python $GOPATH/src/github.com/bmeg/arachne/example/load_property_matrix.py BRCA_clinicalMatrix
 ```
-
-
 
 Python Query: Open Connection
 ```
@@ -127,4 +130,28 @@ Print out expression data of all Stage IIA samples
 ```
 for row in O.query().V().hasLabel("Sample").has("pathologic_stage", "Stage IIA").outgoing("has").hasLabel("Data:expression").outgoingBundle("value"):
   print row
+```
+
+
+
+GraphQL Example
+---------------
+
+```
+./bin/arachne example
+```
+
+
+Get Types:
+```
+{__schema{types{name}}}
+```
+
+
+```
+{__type(name:"Human"){fields{name}}}
+```
+
+```
+query {Human(id:"1000"){name,friend{name}}}
 ```

@@ -1,10 +1,13 @@
 package example
 
 import (
-	//"fmt"
-	"github.com/bmeg/arachne/aql"
-	"github.com/spf13/cobra"
+	"fmt"
 	"log"
+	"strings"
+
+	"github.com/bmeg/arachne/aql"
+	"github.com/golang/protobuf/jsonpb"
+	"github.com/spf13/cobra"
 )
 
 var host = "localhost:8202"
@@ -31,16 +34,17 @@ var Cmd = &cobra.Command{
 			return err
 		}
 
-		graphs := conn.GetGraphList()
+		graphql := fmt.Sprintf("%s:schema", graph)
 
-		if !found(graphs, "graphql") {
-			conn.AddGraph("graphql")
+		graphs := conn.GetGraphList()
+		if !found(graphs, graphql) {
+			conn.AddGraph(graphql)
 		}
 		if !found(graphs, graph) {
 			conn.AddGraph(graph)
 		}
 
-		elemChan := make(chan aql.GraphElement)
+		elemChan := make(chan *aql.GraphElement)
 		wait := make(chan bool)
 		log.Printf("Loading %s into %s", exampleSet, graph)
 		go func() {
@@ -49,24 +53,21 @@ var Cmd = &cobra.Command{
 		}()
 		for _, vertex := range swVertices {
 			v := vertex
-			elemChan <- aql.GraphElement{Graph: graph, Vertex: &v}
+			elemChan <- &aql.GraphElement{Graph: graph, Vertex: &v}
 		}
 		for _, edge := range swEdges {
 			e := edge
-			elemChan <- aql.GraphElement{Graph: graph, Edge: &e}
+			elemChan <- &aql.GraphElement{Graph: graph, Edge: &e}
 		}
-
-		for _, vertex := range swGQLVertices {
-			v := vertex
-			elemChan <- aql.GraphElement{Graph: "graphql", Vertex: &v}
-		}
-		for _, edge := range swGQLEdges {
-			e := edge
-			elemChan <- aql.GraphElement{Graph: "graphql", Edge: &e}
-		}
-
 		close(elemChan)
 		<-wait
+
+		e := aql.Graph{}
+		if err := jsonpb.Unmarshal(strings.NewReader(swGQLGraph), &e); err != nil {
+			log.Printf("Error: %s", err)
+		}
+		conn.AddSubGraph(graphql, &e)
+
 		return nil
 	},
 }

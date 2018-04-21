@@ -2,8 +2,9 @@ package aql
 
 import (
 	"fmt"
-	"github.com/bmeg/arachne/protoutil"
 	"strings"
+
+	"github.com/bmeg/arachne/protoutil"
 )
 
 // V starts a new vertex query, short for `NewQuery().V()`.
@@ -42,11 +43,9 @@ func (q *Query) V(id ...string) *Query {
 }
 
 // E adds a edge selection step to the query
-func (q *Query) E(ids ...string) *Query {
-	if len(ids) > 0 {
-		return q.with(&GraphStatement{&GraphStatement_E{ids[0]}})
-	}
-	return q.with(&GraphStatement{&GraphStatement_E{}})
+func (q *Query) E(id ...string) *Query {
+	elist := protoutil.AsListValue(id)
+	return q.with(&GraphStatement{&GraphStatement_E{elist}})
 }
 
 // In follows incoming edges to adjacent vertex
@@ -65,6 +64,12 @@ func (q *Query) InEdge(label ...string) *Query {
 func (q *Query) Out(label ...string) *Query {
 	vlist := protoutil.AsListValue(label)
 	return q.with(&GraphStatement{&GraphStatement_Out{vlist}})
+}
+
+// Both follows both incoming and outgoing edges to adjacent vertex
+func (q *Query) Both(label ...string) *Query {
+	vlist := protoutil.AsListValue(label)
+	return q.with(&GraphStatement{&GraphStatement_Both{vlist}})
 }
 
 // OutEdge moves to outgoing edge
@@ -144,7 +149,8 @@ func (q *Query) String() string {
 			add("V", ids...)
 
 		case *GraphStatement_E:
-			add("E", stmt.E)
+			ids := protoutil.AsStringList(stmt.E)
+			add("E", ids...)
 
 		case *GraphStatement_Has:
 			args := []string{stmt.Has.Key}
@@ -200,7 +206,7 @@ func (q *Query) String() string {
 		case *GraphStatement_Match:
 			add("Match")
 		case *GraphStatement_Values:
-			add("Values")
+			add("Values", stmt.Values.Labels...)
 
 		case *GraphStatement_Import:
 			add("Import")

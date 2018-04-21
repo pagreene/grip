@@ -1,8 +1,9 @@
 package protoutil
 
 import (
-	structpb "github.com/golang/protobuf/ptypes/struct"
 	"log"
+
+	structpb "github.com/golang/protobuf/ptypes/struct"
 )
 
 //StructSet take value and add it to Struct s using key
@@ -50,6 +51,13 @@ func WrapValue(value interface{}) *structpb.Value {
 		}
 		return &structpb.Value{Kind: &structpb.Value_StructValue{StructValue: o}}
 	case map[string]float64:
+		o := &structpb.Struct{Fields: map[string]*structpb.Value{}}
+		for k, v := range v {
+			wv := WrapValue(v)
+			o.Fields[k] = wv
+		}
+		return &structpb.Value{Kind: &structpb.Value_StructValue{StructValue: o}}
+	case map[string]int64:
 		o := &structpb.Struct{Fields: map[string]*structpb.Value{}}
 		for k, v := range v {
 			wv := WrapValue(v)

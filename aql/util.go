@@ -5,6 +5,7 @@ import (
 	//"log"
 	//"fmt"
 	"context"
+
 	"github.com/bmeg/arachne/protoutil"
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"google.golang.org/grpc"
@@ -41,9 +42,10 @@ func (client Client) GetGraphs() chan string {
 		}
 		for {
 			elem, err := cl.Recv()
-			if err == io.EOF {
+			if err == io.EOF || err != nil {
 				break
 			}
+
 			out <- elem.Graph
 		}
 	}()
@@ -78,31 +80,31 @@ func (client Client) AddGraph(graph string) error {
 }
 
 // AddVertex adds a single vertex to the graph
-func (client Client) AddVertex(graph string, v Vertex) error {
-	client.EditC.AddVertex(context.Background(), &GraphElement{Graph: graph, Vertex: &v})
+func (client Client) AddVertex(graph string, v *Vertex) error {
+	client.EditC.AddVertex(context.Background(), &GraphElement{Graph: graph, Vertex: v})
 	return nil
 }
 
 // AddEdge adds a single edge to the graph
-func (client Client) AddEdge(graph string, e Edge) error {
-	client.EditC.AddEdge(context.Background(), &GraphElement{Graph: graph, Edge: &e})
+func (client Client) AddEdge(graph string, e *Edge) error {
+	client.EditC.AddEdge(context.Background(), &GraphElement{Graph: graph, Edge: e})
 	return nil
 }
 
-// AddBundle adds a edge bundle to the graph
-func (client Client) AddBundle(graph string, e Bundle) error {
-	client.EditC.AddBundle(context.Background(), &GraphElement{Graph: graph, Bundle: &e})
+// AddSubGraph adds a complete subgraph to an existing graph
+func (client Client) AddSubGraph(graph string, g *Graph) error {
+	client.EditC.AddSubGraph(context.Background(), &Graph{Graph: graph, Edges: g.Edges, Vertices: g.Vertices})
 	return nil
 }
 
 // StreamElements allows for bulk continuous loading of graph elements into the datastore
-func (client Client) StreamElements(elemChan chan GraphElement) error {
+func (client Client) StreamElements(elemChan chan *GraphElement) error {
 	sc, err := client.EditC.StreamElements(context.Background())
 	if err != nil {
 		return err
 	}
 	for elem := range elemChan {
-		err := sc.Send(&elem)
+		err := sc.Send(elem)
 		if err != nil {
 			return err
 		}
@@ -119,10 +121,15 @@ func (client Client) GetVertex(graph string, id string) (*Vertex, error) {
 
 // Execute executes the given query.
 func (client Client) Execute(graph string, q *Query) (chan *ResultRow, error) {
-	tclient, err := client.QueryC.Traversal(context.TODO(), &GraphQuery{
+	return client.Traversal(&GraphQuery{
 		Graph: graph,
 		Query: q.Statements,
 	})
+}
+
+// Traversal runs a graph traversal query
+func (client Client) Traversal(query *GraphQuery) (chan *ResultRow, error) {
+	tclient, err := client.QueryC.Traversal(context.TODO(), query)
 	if err != nil {
 		return nil, err
 	}
@@ -134,6 +141,7 @@ func (client Client) Execute(graph string, q *Query) (chan *ResultRow, error) {
 		}
 	}()
 	return out, nil
+
 }
 
 // GetDataMap obtains data attached to vertex in the form of a map
@@ -170,4 +178,14 @@ func (edge *Edge) GetProperty(key string) interface{} {
 	}
 	m := protoutil.AsMap(edge.Data)
 	return m[key]
+}
+
+// HasProperty returns true is field is defined
+func (edge *Edge) HasProperty(key string) bool {
+	if edge.Data == nil {
+		return false
+	}
+	m := protoutil.AsMap(edge.Data)
+	_, ok := m[key]
+	return ok
 }

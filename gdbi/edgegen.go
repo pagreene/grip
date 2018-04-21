@@ -24,6 +24,15 @@ type FieldMatch struct {
 	Op    aql.Condition
 }
 
+func contains(a []string, v string) bool {
+	for _, i := range a {
+		if i == v {
+			return true
+		}
+	}
+	return false
+}
+
 func BuildMatch(match []*aql.VertexMatch, data interface{}) []FieldMatch {
 	out := []FieldMatch{}
 	for _, m := range match {

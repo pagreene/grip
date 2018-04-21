@@ -1,20 +1,37 @@
 package server
 
 import (
-	"github.com/bmeg/arachne/graphserver"
-	"github.com/spf13/cobra"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
-	"path/filepath"
+
+	_ "github.com/bmeg/arachne/badgerdb" // import so badger will register itself
+	_ "github.com/bmeg/arachne/boltdb"   // import so bolt will register itself
+	"github.com/bmeg/arachne/elastic"
+	"github.com/bmeg/arachne/gdbi"
+	"github.com/bmeg/arachne/graphserver"
+	"github.com/bmeg/arachne/kvgraph"
+	_ "github.com/bmeg/arachne/leveldb" // import so level will register itself
+	"github.com/bmeg/arachne/mongo"
+	_ "github.com/bmeg/arachne/rocksdb" // import so rocks will register itself
+	"github.com/spf13/cobra"
 )
 
-var httpPort = "8201"
-var rpcPort = "8202"
-var dbPath = "graph.db"
-var mongoURL string
-var boltPath string
-var rocksPath string
+var (
+	httpPort   = "8201"
+	rpcPort    = "8202"
+	dbName     = "arachne"
+	workDir    = "arachne.work"
+	badgerPath = "arachne.db"
+	mongoURL   string
+	elasticURL string
+	boltPath   string
+	rocksPath  string
+	levelPath  string
+	contentDir string
+	readOnly   bool
+)
 
 // Cmd the main command called by the cobra library
 var Cmd = &cobra.Command{
@@ -22,23 +39,40 @@ var Cmd = &cobra.Command{
 	Short: "Starts arachne server",
 	Long:  ``,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		dir, _ := filepath.Abs(os.Args[0])
-		contentDir := filepath.Join(dir, "..", "..", "share")
-
 		log.Printf("Starting Server")
-
-		var server *graphserver.ArachneServer = nil
-		if mongoURL != "" {
-			server = graphserver.NewArachneMongoServer(mongoURL, dbPath)
-		} else if boltPath != "" {
-			server = graphserver.NewArachneBoltServer(boltPath)
-		} else if rocksPath != "" {
-			server = graphserver.NewArachneRocksServer(rocksPath)
-		} else {
-			server = graphserver.NewArachneBadgerServer(dbPath)
+		_, err := os.Stat(workDir)
+		if os.IsNotExist(err) {
+			os.Mkdir(workDir, 0700)
 		}
-		server.Start(rpcPort)
-		proxy := graphserver.NewHTTPProxy(rpcPort, httpPort, contentDir)
+
+		var db gdbi.GraphDB
+		if mongoURL != "" {
+			db, err = mongo.NewMongo(mongoURL, dbName)
+		} else if elasticURL != "" {
+			db, err = elastic.NewElastic(elasticURL, dbName)
+		} else if boltPath != "" {
+			db, err = kvgraph.NewKVGraphDB("bolt", boltPath)
+		} else if rocksPath != "" {
+			db, err = kvgraph.NewKVGraphDB("rocks", rocksPath)
+		} else if levelPath != "" {
+			db, err = kvgraph.NewKVGraphDB("level", levelPath)
+		} else {
+			db, err = kvgraph.NewKVGraphDB("badger", badgerPath)
+		}
+		if err != nil {
+			return fmt.Errorf("Database connection failed: %v", err)
+		}
+
+		server := graphserver.NewArachneServer(db, workDir, readOnly)
+		err = server.Start(rpcPort)
+		if err != nil {
+			return fmt.Errorf("Failed to start grpc server: %v", err)
+		}
+
+		proxy, err := graphserver.NewHTTPProxy(rpcPort, httpPort, contentDir)
+		if err != nil {
+			return fmt.Errorf("Failed to setup http proxy: %v", err)
+		}
 
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
@@ -46,8 +80,9 @@ var Cmd = &cobra.Command{
 			<-c
 			proxy.Stop()
 		}()
+
 		proxy.Run()
-		log.Printf("Server Stoped, closing database")
+		log.Printf("Server Stopped, closing database")
 		server.CloseDB()
 		return nil
 	},
@@ -57,8 +92,14 @@ func init() {
 	flags := Cmd.Flags()
 	flags.StringVar(&httpPort, "port", httpPort, "HTTP Port")
 	flags.StringVar(&rpcPort, "rpc", rpcPort, "TCP+RPC Port")
-	flags.StringVar(&dbPath, "db", "arachne.db", "DB Path")
-	flags.StringVar(&mongoURL, "mongo", "", "Mongo URL")
-	flags.StringVar(&boltPath, "bolt", "", "Bolt DB Path")
-	flags.StringVar(&rocksPath, "rocks", "", "RocksDB Path")
+	flags.StringVar(&badgerPath, "badger", badgerPath, "BadgerDB Path")
+	flags.StringVar(&mongoURL, "mongo", mongoURL, "Mongo URL")
+	flags.StringVar(&elasticURL, "elastic", elasticURL, "Elasticsearch URL")
+	flags.StringVar(&boltPath, "bolt", boltPath, "BoltDB Path")
+	flags.StringVar(&rocksPath, "rocks", rocksPath, "RocksDB Path")
+	flags.StringVar(&levelPath, "level", "", "LevelDB Path")
+	flags.StringVar(&dbName, "name", dbName, "Database Name")
+	flags.StringVar(&contentDir, "content", contentDir, "Content Path")
+	flags.StringVar(&workDir, "workdir", workDir, "WorkDir")
+	flags.BoolVar(&readOnly, "read-only", readOnly, "Start server in read-only mode")
 }
