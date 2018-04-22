@@ -93,7 +93,7 @@ message FoldStatement {
 
 message VertexMatch {
   string field = 1;
-  repeated string value = 2;
+  string value = 2;
   Condition op = 3;
 }
 
@@ -105,19 +105,24 @@ message GenMatch {
 
 message EdgeGen {
   string gid = 1;
-  string label = 2;
+  string from_label = 2;
+  string to_label = 3;
   oneof build {
-    GenMatch unzip = 3;
-    GenMatch range = 4;
-    GenMatch match = 5;
+    GenMatch unzip = 4;
+    GenMatch range = 5;
+    GenMatch match = 6;
   }
+}
+
+message EdgeGenCreate {
+  string graph = 1;
+  EdgeGen gen = 2;
 }
 
 message Vertex {
   string gid = 1;
   string label = 2;
   google.protobuf.Struct data = 3;
-  repeated EdgeGen gen = 4;
 }
 
 message Edge {
@@ -242,6 +247,18 @@ service Query {
     };
   }
 
+  rpc ListEdgeGen(GraphID) returns (stream ElementID) {
+    option (google.api.http) = {
+      get: "/v1/graph/{graph}/edgegen"
+    };
+  }
+
+  rpc GetEdgeGen(ElementID) returns (EdgeGen) {
+    option (google.api.http) = {
+      get: "/v1/graph/{graph}/edgegen/{id}"
+    };
+  }
+
   rpc IndexTraversal(IndexQuery) returns (stream ResultRow) {
     option (google.api.http) = {
       post: "/v1/graph/{graph}/index/{label}/{field}"
@@ -319,6 +336,19 @@ service Edit {
   rpc DeleteIndex(IndexID) returns (EditResult) {
     option (google.api.http) = {
       delete: "/v1/graph/{graph}/index/{label}/{field}"
+    };
+  }
+
+  rpc AddEdgeGen(EdgeGenCreate) returns (EditResult) {
+    option (google.api.http) = {
+      post: "/v1/graph/{graph}/edgegen"
+      body: "*"
+    };
+  }
+
+  rpc DeleteEdgeGen(ElementID) returns (EditResult) {
+    option (google.api.http) = {
+      delete: "/v1/graph/{graph}/edgegen/{id}"
     };
   }
 

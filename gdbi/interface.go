@@ -100,6 +100,11 @@ type GraphInterface interface {
 	GetVertexTermCount(ctx context.Context, label string, field string) chan aql.IndexTermCount
 	//GetEdgeTermCount(ctx context.Context, label string, field string) chan aql.IndexTermCount
 
+	AddEdgeGen(*aql.EdgeGen) error
+	DeleteEdgeGen(key string) error
+	ListEdgeGen() chan string
+	GetEdgeGen(key string) *aql.EdgeGen
+
 	GetVertexList(ctx context.Context, load bool) <-chan *aql.Vertex
 	GetEdgeList(ctx context.Context, load bool) <-chan *aql.Edge
 
