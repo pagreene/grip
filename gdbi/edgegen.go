@@ -27,6 +27,7 @@ type FieldMatch struct {
 func BuildMatch(match []*aql.VertexMatch, data interface{}) []FieldMatch {
 	out := []FieldMatch{}
 	for _, m := range match {
+		log.Printf("Field value %s", m.Value)
 		t, err := jsonpath.Get(data, m.Value)
 		if err != nil {
 			log.Printf("Path Error: %s %s %s", m.Value, data, err)

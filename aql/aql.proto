@@ -107,10 +107,11 @@ message EdgeGen {
   string gid = 1;
   string from_label = 2;
   string to_label = 3;
+  string label = 4;
   oneof build {
-    GenMatch unzip = 4;
-    GenMatch range = 5;
-    GenMatch match = 6;
+    GenMatch unzip = 5;
+    GenMatch range = 6;
+    GenMatch match = 7;
   }
 }
 

@@ -9,10 +9,23 @@ import (
 
 var edgeGenStr1 = `
 {
-    "label" : "related", "unzip" : {
-        "field" : "$.data", "match" : [{"field" : "gid", "value" : ["$.[0]"]}], "data" : "$[1]"
+    "label" : "related",
+		"from_label" : "Person",
+		"to_label" : "Person"
+		"unzip" : {
+        "field" : "$.data", "match" : [{"field" : "gid", "value" : "$.[0]"}], "data" : "$[1]"
     }
 }
+`
+
+var edgeGenStr2 = `
+"gen" : [
+	{
+			"label" : "related", "unzip" : {
+					"field" : "$.data", "match" : [{"field" : "gid", "value" : ["$.[0]"], "op":"EQ"}], "data" : "$[1]"
+			}
+	}
+]
 `
 
 var vertexStr1 = `
@@ -22,14 +35,7 @@ var vertexStr1 = `
   "data" : {
     "hello" : { "v" : 1},
     "world" : { "v" : 1}
-  },
-  "gen" : [
-    {
-        "label" : "related", "unzip" : {
-            "field" : "$.data", "match" : [{"field" : "gid", "value" : ["$.[0]"], "op":"EQ"}], "data" : "$[1]"
-        }
-    }
-  ]
+  }
 }
 `
 
@@ -46,10 +52,13 @@ func TestEdgeGen(t *testing.T) {
 	jsonpb.UnmarshalString(vertexStr1, &v)
 	log.Printf("%s", v)
 
-	edges := EdgeGenerate(v, []string{"related"})
+	g := aql.EdgeGen{}
+	jsonpb.UnmarshalString(edgeGenStr1, &g)
 
-	for _, e := range edges {
-		log.Printf("%s : %s : %s", e.Gid, e.Label, e.Data)
+	queries := EdgeGenerate(&v, g)
+
+	for _, q := range queries {
+		log.Printf("%s", q)
 	}
 
 }
