@@ -11,9 +11,9 @@ var edgeGenStr1 = `
 {
     "label" : "related",
 		"from_label" : "Person",
-		"to_label" : "Person"
+		"to_label" : "Person",
 		"unzip" : {
-        "field" : "$.data", "match" : [{"field" : "gid", "value" : "$.[0]"}], "data" : "$[1]"
+        "field" : "$.data", "match" : [{"field" : "gid", "value" : "$[0]"}], "data" : "$[1]"
     }
 }
 `
@@ -50,10 +50,13 @@ func TestParsing(t *testing.T) {
 func TestEdgeGen(t *testing.T) {
 	v := aql.Vertex{}
 	jsonpb.UnmarshalString(vertexStr1, &v)
-	log.Printf("%s", v)
 
 	g := aql.EdgeGen{}
-	jsonpb.UnmarshalString(edgeGenStr1, &g)
+	err := jsonpb.UnmarshalString(edgeGenStr1, &g)
+	if err != nil {
+		log.Printf("%s", err)
+	}
+	log.Printf("%s", g)
 
 	queries := EdgeGenerate(&v, g)
 

@@ -19,6 +19,7 @@ func VertexToMap(a *aql.Vertex) map[string]interface{} {
 }
 
 type FieldMatch struct {
+	Gid   string
 	Field string
 	Value interface{}
 	Op    aql.Condition
