@@ -87,11 +87,14 @@ type GraphInterface interface {
 
 	AddVertexIndex(label string, field string) error
 	DeleteVertexIndex(label string, field string) error
+	HasVertexIndex(label string, field string) bool
 	GetVertexIndexList() chan aql.IndexID
 
 	GetVertexTermAggregation(ctx context.Context, label string, field string, size uint32) (*aql.AggregationResult, error)
 	GetVertexPercentileAggregation(ctx context.Context, label string, field string, percents []float64) (*aql.AggregationResult, error)
 	GetVertexHistogramAggregation(ctx context.Context, label string, field string, interval uint32) (*aql.AggregationResult, error)
+
+	GetIndexedVertexChannel(ctx context.Context, label string, field string, term interface{}) <-chan *aql.Vertex
 
 	GetVertexList(ctx context.Context, load bool) <-chan *aql.Vertex
 	GetEdgeList(ctx context.Context, load bool) <-chan *aql.Edge
