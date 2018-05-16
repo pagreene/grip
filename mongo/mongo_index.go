@@ -91,6 +91,11 @@ func (mg *Graph) GetVertexIndexList() chan aql.IndexID {
 	return out
 }
 
+func (mg *Graph) HasVertexIndex(label string, field string) bool {
+	//TODO: make sure this is optimial
+	return true
+}
+
 //GetVertexTermAggregation get count of every term across vertices
 func (mg *Graph) GetVertexTermAggregation(ctx context.Context, label string, field string, size uint32) (*aql.AggregationResult, error) {
 	log.Printf("Running GetVertexTermAggregation: { label: %s, field: %s size: %v}", label, field, size)

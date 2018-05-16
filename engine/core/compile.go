@@ -236,11 +236,48 @@ func (comp DefaultCompiler) Compile(stmts []*aql.GraphStatement) (gdbi.Pipeline,
 	return &DefaultPipeline{procs, lastType, markTypes}, nil
 }
 
+func traversalProcessor(a gdbi.Processor) bool {
+	if _, ok := a.(*LookupVertexAdjOut); ok {
+		return true
+	}
+	if _, ok := a.(*LookupEdgeAdjOut); ok {
+		return true
+	}
+	if _, ok := a.(*LookupVertexAdjIn); ok {
+		return true
+	}
+	if _, ok := a.(*LookupEdgeAdjIn); ok {
+		return true
+	}
+	if _, ok := a.(*InEdge); ok {
+		return true
+	}
+	if _, ok := a.(*OutEdge); ok {
+		return true
+	}
+	return false
+}
+
+func getStartConditionChain(pipe []gdbi.Processor) []*aql.WhereExpression {
+	//from vertex start to first traversal
+	out := []*aql.WhereExpression{}
+	for i := 1; i < len(pipe) && !traversalProcessor(pipe[i]); i++ {
+		if x, ok := pipe[i].(*Where); ok {
+			out = append(out, x.stmt)
+		}
+	}
+	return out
+}
+
 // For V().Where(Eq("$.label", "Person")) and V().Where(Eq("$.gid", "1")) queries, streamline into a single index lookup
 func indexStartOptimize(pipe []gdbi.Processor) []gdbi.Processor {
 	if len(pipe) >= 2 {
 		if lookupV, ok := pipe[0].(*LookupVerts); ok {
+			//if starting on all vertices
 			if len(lookupV.ids) == 0 {
+				whereChain := getStartConditionChain(pipe)
+				//do something here
+				fmt.Printf("%s\n", whereChain)
 				if where, ok := pipe[1].(*Where); ok {
 					if cond := where.stmt.GetCondition(); cond != nil {
 						vals := []string{}

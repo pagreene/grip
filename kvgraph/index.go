@@ -78,6 +78,11 @@ func (kgdb *KVInterfaceGDB) GetVertexIndexList() chan aql.IndexID {
 	return out
 }
 
+func (kgdb *KVInterfaceGDB) HasVertexIndex(label string, field string) bool {
+	return kgdb.kvg.idx.HasField(fmt.Sprintf("%s.v.%s.%s", kgdb.graph, label, field))
+
+}
+
 //VertexLabelScan produces a channel of all vertex ids in a graph
 //that match a given label
 func (kgdb *KVInterfaceGDB) VertexLabelScan(ctx context.Context, label string) chan string {

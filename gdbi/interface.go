@@ -94,7 +94,7 @@ type GraphInterface interface {
 	GetVertexPercentileAggregation(ctx context.Context, label string, field string, percents []float64) (*aql.AggregationResult, error)
 	GetVertexHistogramAggregation(ctx context.Context, label string, field string, interval uint32) (*aql.AggregationResult, error)
 
-	GetIndexedVertexChannel(ctx context.Context, label string, field string, term interface{}) <-chan *aql.Vertex
+	//GetIndexedVertexChannel(ctx context.Context, label string, field string, term interface{}) <-chan *aql.Vertex
 
 	GetVertexList(ctx context.Context, load bool) <-chan *aql.Vertex
 	GetEdgeList(ctx context.Context, load bool) <-chan *aql.Edge

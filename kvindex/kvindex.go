@@ -177,6 +177,11 @@ func (idx *KVIndex) RemoveField(path string) error {
 	return idx.kv.Delete(fk)
 }
 
+func (idx *KVIndex) HasField(path string) bool {
+	_, ok := idx.fields[path]
+	return ok
+}
+
 // ListFields lists all indexed fields
 func (idx *KVIndex) ListFields() []string {
 	out := make([]string, 0, 10)
