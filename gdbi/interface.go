@@ -27,8 +27,8 @@ type DataElement struct {
 
 // Traveler is a query element that traverse the graph
 type Traveler struct {
-	current      *DataElement
-	marks        map[string]*DataElement
+	Current      *DataElement
+	Marks        map[string]*DataElement
 	Selections   map[string]*DataElement
 	Aggregations map[string]*aql.AggregationResult
 	Count        uint32

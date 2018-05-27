@@ -52,11 +52,11 @@ message GraphStatement {
 
 message AggregationsRequest {
   string graph = 1;
-  repeated Aggregate aggregations = 2; 
+  repeated Aggregate aggregations = 2;
 }
 
 message Aggregations {
-  repeated Aggregate aggregations = 1; 
+  repeated Aggregate aggregations = 1;
 }
 
 message Aggregate {
@@ -199,6 +199,33 @@ message Timestamp {
   string timestamp = 1;
 }
 
+enum JobState {
+  UNKNOWN_STATE = 0;
+  QUEUED = 1;
+  RUNNING = 2;
+	DONE = 3;
+	ERROR = 4;
+}
+
+message JobStatus {
+	string id = 1;
+	JobState state = 2;
+	string graph = 3;
+	repeated GraphStatement query = 4;
+	uint32 line_count = 5;
+	uint32 file_size = 6;
+}
+
+message JobQuery {
+	string jobid = 1;
+	string graph = 2;
+}
+
+
+message JobListQuery {
+	string graph = 1;
+}
+
 message Empty {}
 
 service Query {
@@ -215,6 +242,25 @@ service Query {
       body: "*"
     };
   }
+
+	rpc QueryJob(GraphQuery) returns (JobStatus) {
+		option (google.api.http) = {
+			post: "/v1/graph/{graph}/job"
+      body: "*"
+		};
+	}
+
+	rpc GetJob(JobQuery) returns (stream QueryResult) {
+		option (google.api.http) = {
+			get: "/v1/graph/{graph}/job/{jobid}"
+		};
+	}
+
+	rpc ListJob(JobListQuery) returns (stream JobStatus) {
+		option (google.api.http) = {
+			get: "/v1/graph/{graph}/job"
+		};
+	}
 
   rpc GetVertex(ElementID) returns (Vertex) {
     option (google.api.http) = {

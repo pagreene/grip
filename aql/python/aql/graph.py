@@ -118,6 +118,12 @@ class Graph:
         """
         return Query(self.base_url, self.name)
 
+    def startJob(self, query):
+        url = self.url + "/job"
+        response = requests.post(url, json={"query": query.query})
+        print(response)
+        response.raise_for_status()
+        return response.json()
 
 class BulkAdd:
     def __init__(self, url, graph):

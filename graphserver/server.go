@@ -9,6 +9,8 @@ import (
 	"github.com/bmeg/arachne/aql"
 	"github.com/bmeg/arachne/engine"
 	"github.com/bmeg/arachne/gdbi"
+	"github.com/bmeg/arachne/jobs"
+
 	"golang.org/x/net/context"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
@@ -17,14 +19,16 @@ import (
 
 // ArachneServer is a GRPC based arachne server
 type ArachneServer struct {
-	db       gdbi.GraphDB
-	workDir  string
-	readOnly bool
+	db         gdbi.GraphDB
+	workDir    string
+	readOnly   bool
+	jobManager jobs.JobManager
 }
 
 // NewArachneServer initializes a GRPC server to connect to the graph store
 func NewArachneServer(db gdbi.GraphDB, workDir string, readonly bool) *ArachneServer {
-	return &ArachneServer{db: db, workDir: workDir, readOnly: readonly}
+	man := jobs.NewLocalServer(workDir+"/jobs", workDir, db)
+	return &ArachneServer{db: db, workDir: workDir, readOnly: readonly, jobManager: man}
 }
 
 // errorInterceptor is an interceptor function that logs all errors
@@ -424,4 +428,20 @@ func (server *ArachneServer) Aggregate(ctx context.Context, req *aql.Aggregation
 	}
 
 	return &aql.NamedAggregationResult{Aggregations: aggs}, nil
+}
+
+func (server *ArachneServer) QueryJob(ctx context.Context, query *aql.GraphQuery) (*aql.JobStatus, error) {
+	log.Printf("Job Request")
+	o := server.jobManager.CreateJob(query)
+	return &o, nil
+}
+
+func (server *ArachneServer) GetJob(job *aql.JobQuery, stream aql.Query_GetJobServer) error {
+	log.Printf("Getting Results")
+	return nil
+}
+
+func (server *ArachneServer) ListJob(list *aql.JobListQuery, stream aql.Query_ListJobServer) error {
+	log.Printf("Listing Jobs")
+	return nil
 }
