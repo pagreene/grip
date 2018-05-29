@@ -430,18 +430,25 @@ func (server *ArachneServer) Aggregate(ctx context.Context, req *aql.Aggregation
 	return &aql.NamedAggregationResult{Aggregations: aggs}, nil
 }
 
-func (server *ArachneServer) QueryJob(ctx context.Context, query *aql.GraphQuery) (*aql.JobStatus, error) {
+func (server *ArachneServer) CreateJob(ctx context.Context, query *aql.GraphQuery) (*aql.JobStatus, error) {
 	log.Printf("Job Request")
 	o := server.jobManager.CreateJob(query)
 	return &o, nil
 }
 
-func (server *ArachneServer) GetJob(job *aql.JobQuery, stream aql.Query_GetJobServer) error {
+func (server *ArachneServer) QueryJob(job *aql.JobQuery, stream aql.Query_QueryJobServer) error {
 	log.Printf("Getting Results")
+	res := server.jobManager.QueryJob(stream.Context(), job.Graph, job.Jobid, job.Query)
+	for row := range res {
+		err := stream.Send(row)
+		if err != nil {
+			return fmt.Errorf("error sending Traversal result: %v", err)
+		}
+	}
 	return nil
 }
 
-func (server *ArachneServer) ListJob(list *aql.JobListQuery, stream aql.Query_ListJobServer) error {
+func (server *ArachneServer) GetJobs(list *aql.JobListQuery, stream aql.Query_GetJobsServer) error {
 	log.Printf("Listing Jobs")
 	return nil
 }

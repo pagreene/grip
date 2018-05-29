@@ -8,15 +8,12 @@ from aql.util import process_url
 
 
 class Query:
-    def __init__(self, url, graph):
+    def __init__(self, url):
         self.query = []
-        url = process_url(url)
-        self.base_url = url
-        self.url = url + "/v1/graph/" + graph + "/query"
-        self.graph = graph
+        self.url = url
 
     def __append(self, part):
-        q = self.__class__(self.base_url, self.graph)
+        q = self.__class__(self.url)
         q.query = self.query[:]
         q.query.append(part)
         return q

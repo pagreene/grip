@@ -19,6 +19,7 @@ def test_job(O):
 
     job = O.startJob( O.query().V() )
 
-    print job
+    for row in O.queryJob(job):
+        print row
 
     return errors

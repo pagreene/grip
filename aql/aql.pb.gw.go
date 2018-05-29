@@ -102,7 +102,7 @@ func request_Query_Aggregate_0(ctx context.Context, marshaler runtime.Marshaler,
 
 }
 
-func request_Query_QueryJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Query_CreateJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GraphQuery
 	var metadata runtime.ServerMetadata
 
@@ -130,12 +130,16 @@ func request_Query_QueryJob_0(ctx context.Context, marshaler runtime.Marshaler, 
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "graph", err)
 	}
 
-	msg, err := client.QueryJob(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.CreateJob(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func request_Query_GetJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (Query_GetJobClient, runtime.ServerMetadata, error) {
+var (
+	filter_Query_QueryJob_0 = &utilities.DoubleArray{Encoding: map[string]int{"graph": 0, "jobid": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
+)
+
+func request_Query_QueryJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (Query_QueryJobClient, runtime.ServerMetadata, error) {
 	var protoReq JobQuery
 	var metadata runtime.ServerMetadata
 
@@ -168,7 +172,11 @@ func request_Query_GetJob_0(ctx context.Context, marshaler runtime.Marshaler, cl
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "jobid", err)
 	}
 
-	stream, err := client.GetJob(ctx, &protoReq)
+	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_Query_QueryJob_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	stream, err := client.QueryJob(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -181,7 +189,7 @@ func request_Query_GetJob_0(ctx context.Context, marshaler runtime.Marshaler, cl
 
 }
 
-func request_Query_ListJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (Query_ListJobClient, runtime.ServerMetadata, error) {
+func request_Query_GetJobs_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (Query_GetJobsClient, runtime.ServerMetadata, error) {
 	var protoReq JobListQuery
 	var metadata runtime.ServerMetadata
 
@@ -203,7 +211,7 @@ func request_Query_ListJob_0(ctx context.Context, marshaler runtime.Marshaler, c
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "graph", err)
 	}
 
-	stream, err := client.ListJob(ctx, &protoReq)
+	stream, err := client.GetJobs(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -813,6 +821,35 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 
 	})
 
+	mux.Handle("POST", pattern_Query_CreateJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		if cn, ok := w.(http.CloseNotifier); ok {
+			go func(done <-chan struct{}, closed <-chan bool) {
+				select {
+				case <-done:
+				case <-closed:
+					cancel()
+				}
+			}(ctx.Done(), cn.CloseNotify())
+		}
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_Query_CreateJob_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_Query_CreateJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("POST", pattern_Query_QueryJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -838,11 +875,11 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 			return
 		}
 
-		forward_Query_QueryJob_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Query_QueryJob_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_Query_GetJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_Query_GetJobs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		if cn, ok := w.(http.CloseNotifier); ok {
@@ -860,43 +897,14 @@ func RegisterQueryHandlerClient(ctx context.Context, mux *runtime.ServeMux, clie
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Query_GetJob_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Query_GetJobs_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Query_GetJob_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_Query_ListJob_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		if cn, ok := w.(http.CloseNotifier); ok {
-			go func(done <-chan struct{}, closed <-chan bool) {
-				select {
-				case <-done:
-				case <-closed:
-					cancel()
-				}
-			}(ctx.Done(), cn.CloseNotify())
-		}
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_Query_ListJob_0(rctx, inboundMarshaler, client, req, pathParams)
-		ctx = runtime.NewServerMetadataContext(ctx, md)
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_Query_ListJob_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_Query_GetJobs_0(ctx, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1053,11 +1061,11 @@ var (
 
 	pattern_Query_Aggregate_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"v1", "graph", "aggregate"}, ""))
 
-	pattern_Query_QueryJob_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"v1", "graph", "job"}, ""))
+	pattern_Query_CreateJob_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"v1", "graph", "job"}, ""))
 
-	pattern_Query_GetJob_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "graph", "job", "jobid"}, ""))
+	pattern_Query_QueryJob_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "graph", "job", "jobid"}, ""))
 
-	pattern_Query_ListJob_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"v1", "graph", "job"}, ""))
+	pattern_Query_GetJobs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2}, []string{"v1", "graph", "job"}, ""))
 
 	pattern_Query_GetVertex_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "graph", "vertex", "id"}, ""))
 
@@ -1075,11 +1083,11 @@ var (
 
 	forward_Query_Aggregate_0 = runtime.ForwardResponseMessage
 
-	forward_Query_QueryJob_0 = runtime.ForwardResponseMessage
+	forward_Query_CreateJob_0 = runtime.ForwardResponseMessage
 
-	forward_Query_GetJob_0 = runtime.ForwardResponseStream
+	forward_Query_QueryJob_0 = runtime.ForwardResponseStream
 
-	forward_Query_ListJob_0 = runtime.ForwardResponseStream
+	forward_Query_GetJobs_0 = runtime.ForwardResponseStream
 
 	forward_Query_GetVertex_0 = runtime.ForwardResponseMessage
 

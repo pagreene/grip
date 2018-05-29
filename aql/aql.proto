@@ -219,6 +219,7 @@ message JobStatus {
 message JobQuery {
 	string jobid = 1;
 	string graph = 2;
+	repeated GraphStatement query = 3;
 }
 
 
@@ -243,20 +244,20 @@ service Query {
     };
   }
 
-	rpc QueryJob(GraphQuery) returns (JobStatus) {
+	rpc CreateJob(GraphQuery) returns (JobStatus) {
 		option (google.api.http) = {
 			post: "/v1/graph/{graph}/job"
       body: "*"
 		};
 	}
 
-	rpc GetJob(JobQuery) returns (stream QueryResult) {
+	rpc QueryJob(JobQuery) returns (stream QueryResult) {
 		option (google.api.http) = {
-			get: "/v1/graph/{graph}/job/{jobid}"
+			post: "/v1/graph/{graph}/job/{jobid}"
 		};
 	}
 
-	rpc ListJob(JobListQuery) returns (stream JobStatus) {
+	rpc GetJobs(JobListQuery) returns (stream JobStatus) {
 		option (google.api.http) = {
 			get: "/v1/graph/{graph}/job"
 		};
