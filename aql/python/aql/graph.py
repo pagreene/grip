@@ -152,7 +152,8 @@ class Graph:
         """
         Create a query handle.
         """
-        return Query(self.base_url, self.name)
+        url = self.url + "/query"
+        return Query(url)
 
     def startJob(self, query):
         url = self.url + "/job"
@@ -160,6 +161,10 @@ class Graph:
         print(response)
         response.raise_for_status()
         return response.json()
+
+    def queryJob(self, job):
+        url = self.url + "/job/" + job["id"]
+        return Query(url)
 
 class BulkAdd:
     def __init__(self, url, graph, user=None, password=None):

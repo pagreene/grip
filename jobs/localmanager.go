@@ -66,6 +66,14 @@ func (man *LocalManager) ListJobs() chan aql.JobStatus {
 	return out
 }
 
+func (man *LocalManager) QueryJob(ctx context.Context,
+	graph string, jobId string, query []*aql.GraphStatement) chan *aql.QueryResult {
+	out := make(chan *aql.QueryResult, 1000)
+	defer close(out)
+	return out
+}
+
+
 type QueryRunner struct {
 	db      gdbi.GraphDB
 	baseDir string
