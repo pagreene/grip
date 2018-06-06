@@ -434,10 +434,11 @@ func (server *ArachneServer) CreateJob(ctx context.Context, query *aql.GraphQuer
 	log.Printf("Job Request")
 	o := server.jobManager.CreateJob(query)
 	return &o, nil
+
 }
 
 func (server *ArachneServer) QueryJob(job *aql.JobQuery, stream aql.Query_QueryJobServer) error {
-	log.Printf("Getting Results")
+	log.Printf("Getting Results %s", job)
 	res := server.jobManager.QueryJob(stream.Context(), job.Graph, job.Jobid, job.Query)
 	for row := range res {
 		err := stream.Send(row)

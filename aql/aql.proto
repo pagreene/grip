@@ -254,6 +254,7 @@ service Query {
 	rpc QueryJob(JobQuery) returns (stream QueryResult) {
 		option (google.api.http) = {
 			post: "/v1/graph/{graph}/job/{jobid}"
+			body: "*"
 		};
 	}
 

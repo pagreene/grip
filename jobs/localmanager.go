@@ -10,13 +10,14 @@ import (
 
 	"encoding/json"
 
+	"github.com/bmeg/golib"
 	"github.com/bmeg/arachne/aql"
 	"github.com/bmeg/arachne/engine"
 	"github.com/bmeg/arachne/gdbi"
 )
 
 type LocalManager struct {
-	basePath  string
+	baseDir  string
 	db        gdbi.GraphDB
 	workDir   string
 	workQueue chan *aql.JobStatus
@@ -33,7 +34,7 @@ func NewLocalServer(path string, workDir string, db gdbi.GraphDB) JobManager {
 		q := QueryRunner{workDir: workDir, baseDir: path, db: db}
 		go q.Process(workQueue)
 	}
-	return &LocalManager{basePath: path, db: db, workDir: workDir, workQueue: workQueue}
+	return &LocalManager{baseDir: path, db: db, workDir: workDir, workQueue: workQueue}
 }
 
 var idRunes = []rune("abcdefghijklmnopqrstuvwxyz")
@@ -67,9 +68,43 @@ func (man *LocalManager) ListJobs() chan aql.JobStatus {
 }
 
 func (man *LocalManager) QueryJob(ctx context.Context,
-	graph string, jobId string, query []*aql.GraphStatement) chan *aql.QueryResult {
+	graphName string, jobId string, query []*aql.GraphStatement) chan *aql.QueryResult {
+
+	travelers := make(chan gdbi.Traveler, 1000)
+	go func() {
+		defer close(travelers)
+		filePath := man.baseDir + "/" + jobId + ".stream"
+		lines, err := golib.ReadFileLines(filePath)
+		if err != nil {
+			return
+		}
+		for line := range lines {
+			if len(line) > 0 {
+				trav := gdbi.Traveler{}
+				json.Unmarshal(line, &trav)
+				travelers <- trav
+			}
+		}
+	}()
+
 	out := make(chan *aql.QueryResult, 1000)
-	defer close(out)
+	go func() {
+		defer close(out)
+		graph, err := man.db.Graph(graphName)
+		compiler := graph.Compiler()
+		log.Printf("Pipeline compile: %s", query)
+		pipeline, err := compiler.Compile(query)
+		if err != nil {
+			log.Printf("Pipeline compile error: %s", err)
+			return
+		}
+		log.Printf("%s", pipeline)
+		for trav := range travelers {
+			res := engine.Convert(gdbi.VertexData, map[string]gdbi.DataType{}, &trav)
+			out <- res
+		}
+	}()
+
 	return out
 }
 
