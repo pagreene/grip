@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+import aql
 
 
 def setupGraph(O):
@@ -19,7 +22,13 @@ def test_job(O):
 
     job = O.startJob( O.query().V() )
 
+    print "Query 1"
     for row in O.queryJob(job):
         print row
+
+    print "Query 2"
+    for row in O.queryJob(job).where(aql.eq("field2", "value2")):
+        print row
+
 
     return errors

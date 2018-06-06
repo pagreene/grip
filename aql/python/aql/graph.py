@@ -158,7 +158,6 @@ class Graph:
     def startJob(self, query):
         url = self.url + "/job"
         response = requests.post(url, json={"query": query.query})
-        print(response)
         response.raise_for_status()
         return response.json()
 

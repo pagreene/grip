@@ -49,9 +49,11 @@ func (comp DefaultCompiler) Compile(stmts []*aql.GraphStatement) (gdbi.Pipeline,
 
 	stmts = Flatten(stmts)
 
+	/*
 	if err := validate(stmts); err != nil {
 		return &DefaultPipeline{}, fmt.Errorf("invalid statments: %s", err)
 	}
+	*/
 
 	lastType := gdbi.NoData
 	markTypes := map[string]gdbi.DataType{}
@@ -139,7 +141,7 @@ func (comp DefaultCompiler) Compile(stmts []*aql.GraphStatement) (gdbi.Pipeline,
 
 		case *aql.GraphStatement_Where:
 			if lastType != gdbi.VertexData && lastType != gdbi.EdgeData {
-				return &DefaultPipeline{}, fmt.Errorf(`"distinct" statement is only valid for edge or vertex types not: %s`, lastType.String())
+				return &DefaultPipeline{}, fmt.Errorf(`"where" statement is only valid for edge or vertex types not: %s`, lastType.String())
 			}
 			add(&Where{stmt.Where})
 

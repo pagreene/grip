@@ -135,13 +135,15 @@ func request_Query_CreateJob_0(ctx context.Context, marshaler runtime.Marshaler,
 
 }
 
-var (
-	filter_Query_QueryJob_0 = &utilities.DoubleArray{Encoding: map[string]int{"graph": 0, "jobid": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
-
 func request_Query_QueryJob_0(ctx context.Context, marshaler runtime.Marshaler, client QueryClient, req *http.Request, pathParams map[string]string) (Query_QueryJobClient, runtime.ServerMetadata, error) {
 	var protoReq JobQuery
 	var metadata runtime.ServerMetadata
+
+	if req.ContentLength > 0 {
+		if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil {
+			return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+		}
+	}
 
 	var (
 		val string
@@ -170,10 +172,6 @@ func request_Query_QueryJob_0(ctx context.Context, marshaler runtime.Marshaler, 
 
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "jobid", err)
-	}
-
-	if err := runtime.PopulateQueryParameters(&protoReq, req.URL.Query(), filter_Query_QueryJob_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	stream, err := client.QueryJob(ctx, &protoReq)
