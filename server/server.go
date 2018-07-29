@@ -12,6 +12,7 @@ import (
 	"github.com/bmeg/arachne/aql"
 	"github.com/bmeg/arachne/gdbi"
 	"github.com/bmeg/arachne/graphql"
+	"github.com/bmeg/arachne/jobs"
 	"github.com/golang/gddo/httputil"
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -24,6 +25,7 @@ type ArachneServer struct {
 	db      gdbi.GraphDB
 	conf    Config
 	schemas map[string]*aql.GraphSchema
+	jobManager jobs.JobManager
 }
 
 // NewArachneServer initializes a GRPC server to connect to the graph store
