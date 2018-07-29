@@ -38,7 +38,8 @@ func NewArachneServer(db gdbi.GraphDB, conf Config) (*ArachneServer, error) {
 		}
 	}
 	schemas := make(map[string]*aql.GraphSchema)
-	return &ArachneServer{db: db, conf: conf, schemas: schemas}, nil
+	man := jobs.NewLocalServer(conf.WorkDir+"/jobs", conf.WorkDir, db)
+	return &ArachneServer{db: db, conf: conf, schemas: schemas, jobManager: man}, nil
 }
 
 // handleError is the grpc gateway error handler

@@ -9,12 +9,10 @@ from aql.util import process_url, raise_for_status
 
 
 class Query:
-    def __init__(self, url, graph, user=None, password=None):
+    def __init__(self, url, user=None, password=None):
         self.query = []
         url = process_url(url)
-        self.base_url = url
-        self.url = url + "/v1/graph/" + graph + "/query"
-        self.graph = graph
+        self.url = url
         if user is None:
             user = os.getenv("ARACHNE_USER", None)
         self.user = user
@@ -23,7 +21,7 @@ class Query:
         self.password = password
 
     def __append(self, part):
-        q = self.__class__(self.base_url, self.graph)
+        q = self.__class__(self.url)
         q.query = self.query[:]
         q.query.append(part)
         return q
